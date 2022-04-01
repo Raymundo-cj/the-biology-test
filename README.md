@@ -4,7 +4,7 @@
 ### 一、相关软件安装
 1.1 Linux下安装anaconda
 有两种安装方法：
-1）通过Xftp和Xshell操作，在anaconda官网上面选择适合自己系统的版本，我这里是2021版Linux-X86-64位系统[下载链接].(https://repo.anaconda.com/archive/Anaconda3-2021.11-Linux-x86_64.sh)
+1）通过Xftp和Xshell操作，在anaconda官网上面选择适合自己系统的版本，我这里是2021版Linux-X86-64位系统[下载链接](https://repo.anaconda.com/archive/Anaconda3-2021.11-Linux-x86_64.sh)
 
 2）通过Linux系统直接下载
 
@@ -75,6 +75,8 @@ kingfisher extract --sra SRR1574780.sra -t 20 -f fastq.gz
 
 
 参考网址
-[全外显子教程].(https://mp.weixin.qq.com/s/y6NB8CPH73QGb17OsU9xPQ)
-[kingfisher 公共测序数据 SRA/Fastq 下载神器].(https://mp.weixin.qq.com/s?__biz=MzI3NzQ3MTcxMg==&mid=2247489784&idx=1&sn=c8fb03d42ed7f2b425d7ed38e64ee408&chksm=eb649077dc131961be2c52e46d8706074bc2f8d3f522971a6f5182a8893a65ea9349c43ca518&scene=21#wechat_redirect)
+
+[全外显子教程](https://mp.weixin.qq.com/s/y6NB8CPH73QGb17OsU9xPQ)
+
+[kingfisher 公共测序数据 SRA/Fastq 下载神器](https://mp.weixin.qq.com/s?__biz=MzI3NzQ3MTcxMg==&mid=2247489784&idx=1&sn=c8fb03d42ed7f2b425d7ed38e64ee408&chksm=eb649077dc131961be2c52e46d8706074bc2f8d3f522971a6f5182a8893a65ea9349c43ca518&scene=21#wechat_redirect)
 
