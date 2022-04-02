@@ -8,13 +8,13 @@
 
 2）通过Linux系统直接下载
 
-```
+```python
 wget https://mirrors.tuna.tsinghua.edu.cn/anaconda/miniconda/Miniconda3-latest-Linux-x86_64.sh 
 ```
 
 1.2 镜像配置
 
-```
+```python
 conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free
 conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/conda-forge
 conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/bioconda
@@ -28,7 +28,7 @@ conda config --set show_channel_urls yes
 
 - 此外，还能根据用户的需求将下载数据直接输出为SRA、Fastq、Fasta或Gzip等格式，非常方便，不需要自己再对SRA数据通过fasterq-dump进行拆分转换
 
-```
+```python
 conda create -c conda-forge -c bioconda -n kingfisher pigz python extern curl sra-tools pandas requests aria2
 #创建虚拟环境
 conda activate kingfisher  
@@ -44,7 +44,7 @@ kingfisher -h
 
 ### 二、数据下载
 
-```
+```python
 kingfisher get -r SRP267791 -m ena-ascp ena-ftp prefetch aws-http
 #-r Run number(s) to download/extract e.g. ERR1739691
 #-p BioProject IDs number(s) to download/extract from e.g. PRJNA621514 or SRP260223
@@ -67,7 +67,7 @@ kingfisher get -r SRP267791 -m ena-ascp ena-ftp prefetch aws-http
 
 SRA格式转换成fastq格式，调用fasterq-dump
 
-```
+```python
 kingfisher extract --sra SRR1574780.sra -t 20 -f fastq.gz
 #-f,指定转换输出的文件格式，支持fastq,fastq.gz,fasta,fasta.gz
 #-t，指定线程数
