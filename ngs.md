@@ -5,6 +5,7 @@
 根据样本拆分好的数据
 
 ### 2.服务器数据分析
+* 本次分析在服务器pg3152，运行下面代码前先激活conda环境：`source activate /public3/home/pg3152/anaconda3/bin/envs/caocao`
 * 路径介绍：这里写这篇记录的路径为`/public3/home/pg3152/caojian/ngs/test`
 * 保存的测序文件在`/public3/home/pg3152/caojian/ngs/test/gene_ngs`
 * 编辑位点的序列数据保存在`/public3/home/pg3152/caojian/ngs/test/gene_acc`
@@ -48,6 +49,7 @@ awk -F "/" '{print "bam-readcount -w 1 -f ~/caojian/ngs/test/gene_acc/acc1.fasta
 echo "finished"
 ```
 得到的文件就是每个位置碱基的数量文件。
+
 ![image](https://github.com/Raymundo-cj/the-biology-test/assets/64938817/0cc5ffe3-1339-4fc3-9e6f-1b2a50bb3ac6)
 
 
@@ -61,6 +63,7 @@ awk -F "/" '{print "perl r4_change_format.pl "$0" > ./baw_percent/"$NF"_percent"
 echo "finished"
 ```
 执行结束就能拿到每个位置碱基占比的文件了，之后将文件下载至本地进行分析即可。
+
 ![image](https://github.com/Raymundo-cj/the-biology-test/assets/64938817/ccf1b364-cbb4-4c53-83ce-e283f29b4e68)
 
 这一步出现的perl文件，代码如下：
