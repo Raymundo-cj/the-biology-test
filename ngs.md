@@ -1,4 +1,59 @@
 ## 这篇文章想要记录一下二代测序数据分析的一些情况
+### 前期数据拆分
+
+**1.获取测序文件的index与测序序列的之间的关系文件**
+
+```
+perl s0_get_barcode_pairs_id.pl ../raw_data/DA/D2A_S41_L001_R1_001.fastq.gz ../raw_data/DA/D2A_S41_L001_R2_001.fastq.gz >barcode_req_id
+```
+
+```
+# s0_get_barcode_pairs_id.pl
+
+#!/usr/bin/perl -w
+use strict;
+open R1,"zcat $ARGV[0]|" or die;
+open R2,"zcat $ARGV[1]|" or die;
+
+my %hash_barcode1;my %hash;my %hash_pairs;
+
+while(<R1>){
+        chomp;
+        my @ss=split/\s/,$_;
+        my $header=$ss[0];
+        chomp(my $sequence=<R1>);
+        chomp(my $comment=<R1>);
+        chomp(my $quality=<R1>);
+        $sequence =~ /CTT(.+?)TGGAGTGAGTACGGTGTGC/; my $barcode1= $1;
+        if (length($barcode1)==4){
+                $hash_barcode1{$header} = $barcode1;
+        }
+}
+# 这里面的序列长度和序列是可以自己切换修改的，根据自己的数据情况
+my $header;my $pairs;
+while(<R2>){
+        chomp;
+        my @ss=split/\s/,$_;
+        $header=$ss[0];
+        chomp(my $sequence=<R2>);
+        chomp(my $comment=<R2>);
+        chomp(my $quality=<R2>);
+        $sequence =~ /TGT(.+?)TGAGTTGGATGCTGGATGG/; my $barcode2= $1;
+        if (length($barcode2)==4){
+                $pairs = $hash_barcode1{$header}."_$barcode2";
+                if (exists $hash_pairs{$pairs}){
+                        $hash_pairs{$pairs} = $hash_pairs{$pairs}."\t$header";
+                }else{
+                        $hash_pairs{$pairs} = $header;
+                }
+        }
+}
+foreach my $key (keys %hash_pairs){
+        print "$key\t$hash_pairs{$key}\n";
+}
+```
+
+
 ### 1.二代测序数据
 ![image](https://github.com/Raymundo-cj/the-biology-test/assets/64938817/0345d56c-743a-4ae5-8e7d-4707d18da0f7)
 
