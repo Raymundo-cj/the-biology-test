@@ -105,19 +105,66 @@ mv GCGT_GATG_R1.fastq T10_R1.fastq
 
 分析前环境设置：
 
-```
+* 软件分析方法在服务器scb8190上面进行，在分析结果之前先激活conda环境`conda activate crispresso2_env`
+* 路径介绍：示例路径为`/public1/home/scb8190/caojian/ngs/data_8_9/acc1`
+
+因为需要实现批量处理，所以需要在运行下面代码获取测序数据文件名称
 
 ```
+for i in `ls $1`; do echo $i >> acc1_list; done
+sed -i 's/_R1_001.fastq.gz//g' acc1_list
+sed -i 's/_R2_001.fastq.gz//g' acc1_list
+sort file_list |uniq  > acc1_gene
+```
+上述代码需要一条一条分开执行
+
+针对测序数据来说，可能存在index未去除干净的情况发生，所以可以根据自己测序数据的情况看是否需要清除并自己进行一次测序数据过滤
+
+```
+#!/bin/bash
+for i in `cat acc1_gene`
+do
+cutadapt -g CTGCAAGGCGATTAAGTTGGGTA -G GCAGTGAGCGCAACGCAATT -e 0.1 -O 5 -m 50 -o $i'_R1_cut.fq.gz' -p $i'_R2_cut.fq.gz' $i'_R1.fq.gz' $i'_R2.fq.gz'
+done
+```
+
+* -g:测序数据R1端的index
+* -G:测序数据R2端的index
+* -o及-p：输出文件名称
+* 其余为输入文件名称
+
+上面完成后就可以用软件分析编辑效率了，自己分析的是prime editing编辑效率，如果需要分析其他类型编辑效率，请在[参考文档](https://github.com/pinellolab/CRISPResso2)中查找参数含义！
+分析prime editing例子
+
+```
+#!/bin/bash
+for i in `cat acc1_gene`
+do
+CRISPResso --fastq_r1 $i'_R1_cut.fq.gz' --fastq_r2 $i'_R2_cut.fq.gz' -qwc 50-123 --amplicon_seq ATTCCTGTGGGTGTTATAGCTGTGGAGACACAGACCATGATGCAGCTCATCCCTGCTGATCCAGGTCAACTTGATTCCCATGAGCGATCTGTTCCTCGGGCTGGACAAGTGTGGTTCCCAGATTCTGCAACCAAGACAGCTCAGGCATTATTAGACTTCAACCGTGAAGGATTGCCTCTGTTCATCCT --prime_editing_pegRNA_spacer_seq TTCCTCGGGCTGGACAAGTG --prime_editing_pegRNA_extension_seq AATCTGGGAACCCCACTTGTCCAGCCCGA --prime_editing_nicking_guide_seq CAAGTTGACCTGGATCAGCA --prime_editing_pegRNA_scaffold_seq GTTTAAGAGCTATGCTGGAAACAGCATAGCAAGTTTAAATAAGGCTAGTCCGTTATCAACTTGAAAAAGTGGCACCGAGTCGGTGC --write_cleaned_report --place_report_in_output_folder
+done
+```
+
+* --fastq_r1：R1序列 --fastq_r2 ：R2序列
+* -qwc ：统计编辑副产物窗口
+* --amplificon_seq ：目标序列
+*  --prime_editing_pegRNA_spacer_seq ：不含PAM的spacer
+*  --prime_editing_pegRNA_extension_seq ：RTT及PBS
+*  --prime_editing_nicking_guide_seq ：如果有nicking序列需要添加这段序列，没有可以不加
+*  --prime_editing_pegRNA_scaffold_seq ：scaffold序列
+*  --write_cleaned_report --place_report_in_output_folder：限制输出格式的参数，需要添加，不同的编辑类型输出格式会有出入，需要根据[参考文档](https://github.com/pinellolab/CRISPResso2)进行选择
+
+后续的结果会以网页的格式展示出来，直接统计编辑效率及副产物占比，若需要查看其他输出文件，请根据参考文档自行查看。
 
 
 
-### 2.服务器数据分析
+### 方法二：实验室前期用于base editing分析的方法
+
 * 本次分析在服务器pg3152，运行下面代码前先激活conda环境：`source activate /public3/home/pg3152/anaconda3/bin/envs/caocao`
-* 路径介绍：这里写这篇记录的路径为`/public3/home/pg3152/caojian/ngs/test`
-* 保存的测序文件在`/public3/home/pg3152/caojian/ngs/test/gene_ngs`
-* 编辑位点的序列数据保存在`/public3/home/pg3152/caojian/ngs/test/gene_acc`
+* 路径介绍：这里写这篇记录的路径为`/public3/home/pg3152/caojian/ngs_test/ngs`
+* 保存的测序文件在`/public3/home/pg3152/caojian/ngs_test/ngs/test/gene_ngs`
+* 编辑位点的序列数据保存在`/public3/home/pg3152/caojian/ngs_test/ngs/test/gene_acc`
 * 这里需要记住一点需要运行`bwa index acc1.fasta`生成索引文件，不然后续运行程序会报错
-* 结果文件保存在`/public3/home/pg3152/caojian/ngs/test/result`
+* 结果文件保存在`/public3/home/pg3152/caojian/ngs_test/ngs/test/result`
 
 2.1 因为需要做到批量处理，需要在测序文件`cd gene_ngs`中运行以下一段代码：
 
@@ -131,7 +178,7 @@ sed -i 's/_R1_001.fastq.gz//g' file_list
 sed -i 's/_R2_001.fastq.gz//g' file_list
 sort file_list |uniq  > gene_list
 ```
-之后将得到的gene_list文件复制到result文件夹下，执行操作`cp -r gene_list ~/caojian/ngs/test/result`
+之后将得到的gene_list文件复制到result文件夹下，执行操作`cp -r gene_list ~/ngs_test/ngs/test/result`
 
 2.2 **在result文件夹中创建bam文件夹**
 
@@ -139,7 +186,7 @@ sort file_list |uniq  > gene_list
 
 ```
 #!/bin/bash
-awk -F "/" '{print "bwa mem -t 60 ~/caojian/ngs/test/gene_acc/acc1.fasta "$0"_R1_001.fastq.gz "$0"_R2_001.fastq.gz|samtools view -bS-q 20 |samtools sort -@ 60 > ./bam/"$NF"_sorted.bam"}' gene_list |head |bash -
+awk -F "/" '{print "bwa mem -t 60 ~/caojian/ngs_test/ngs/test/gene_acc/acc1.fasta "$0"_R1_001.fastq.gz "$0"_R2_001.fastq.gz|samtools view -bS-q 20 |samtools sort -@ 60 > ./bam/"$NF"_sorted.bam"}' gene_list |head |bash -
 echo "finished"
 ```
 会在result文件中得到bam文件
