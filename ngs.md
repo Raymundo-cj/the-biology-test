@@ -81,6 +81,7 @@ do
 done
 
 ```
+
 这样就会得到一些数据文件，之后转化为自己文件命名的格式
 
 ```
@@ -92,7 +93,6 @@ mv GCGT_GCTC_R1.fastq T10cr2-4_R1.fastq
 mv GCGT_AGTC_R1.fastq T10cr4-2_R1.fastq
 mv GCGT_GATG_R1.fastq T10_R1.fastq
 ```
-
 
 ### 1.二代测序数据
 ![image](https://github.com/Raymundo-cj/the-biology-test/assets/64938817/0345d56c-743a-4ae5-8e7d-4707d18da0f7)
