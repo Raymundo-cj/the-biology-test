@@ -24,7 +24,7 @@ while(<R1>){
         chomp(my $sequence=<R1>);
         chomp(my $comment=<R1>);
         chomp(my $quality=<R1>);
-        $sequence =~ /CTT(.+?)TGGAGTGAGTACGGTGTGC/; my $barcode1= $1;
+        $sequence =~ /GCTT(.+?)TGGAGTGAGTACGGTGTGC/; my $barcode1= $1;
         if (length($barcode1)==4){
                 $hash_barcode1{$header} = $barcode1;
         }
@@ -38,7 +38,7 @@ while(<R2>){
         chomp(my $sequence=<R2>);
         chomp(my $comment=<R2>);
         chomp(my $quality=<R2>);
-        $sequence =~ /TGT(.+?)TGAGTTGGATGCTGGATGG/; my $barcode2= $1;
+        $sequence =~ /CTGT(.+?)TGAGTTGGATGCTGGATGG/; my $barcode2= $1;
         if (length($barcode2)==4){
                 $pairs = $hash_barcode1{$header}."_$barcode2";
                 if (exists $hash_pairs{$pairs}){
@@ -51,6 +51,46 @@ while(<R2>){
 foreach my $key (keys %hash_pairs){
         print "$key\t$hash_pairs{$key}\n";
 }
+```
+**2 根据reads拆分文库**
+
+根据上面得到的文件`barcode_req_id`及`adapter_seq_list`文件，获取每个样品的测序数据ID：
+
+```
+mkdir barcode_out
+cat adapter_seq_list |while read name bar;do grep $bar barcode_req_id >barcode_out/$name;done
+
+```
+adapter_seq_list:
+
+![image](https://github.com/Raymundo-cj/the-biology-test/assets/64938817/58fdbc64-f0af-4389-bc40-3f4801f413f8)
+
+barcode_out:及里面内容
+
+![image](https://github.com/Raymundo-cj/the-biology-test/assets/64938817/7513a809-5cb2-4a9b-96d4-41da57055996)
+
+之后根据样品的序列ID拿到每个样品的序列，并且一个样品一个序列文件：
+
+```
+#!/bin/bash
+mkdir all_library
+for file in barcode_out/*
+do
+    perl s1_get_r1_seq.pl $file ~/lzy/lzyngs/1-LZY_S1_L003_R1_001.fastq.gz
+    perl s1_get_r2_seq.pl $file ~/lzy/lzyngs/1-LZY_S1_L003_R2_001.fastq.gz
+done
+
+```
+这样就会得到一些数据文件，之后转化为自己文件命名的格式
+
+```
+cd all_library
+mv GCGT_GCGT_R1.fastq 259_R1.fastq
+mv GCGT_GTAG_R1.fastq A7_R1.fastq
+mv GCGT_ACGC_R1.fastq VB7_R1.fastq
+mv GCGT_GCTC_R1.fastq T10cr2-4_R1.fastq
+mv GCGT_AGTC_R1.fastq T10cr4-2_R1.fastq
+mv GCGT_GATG_R1.fastq T10_R1.fastq
 ```
 
 
