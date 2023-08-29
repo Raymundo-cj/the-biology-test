@@ -1,10 +1,10 @@
-## 这篇文章想要记录一下二代测序数据分析的一些情况
+## 这篇文章主要记录二代测序数据拆分及如何分析编辑效率
 ### 前期数据拆分
 
 **1.获取测序文件的index与测序序列的之间的关系文件**
 
 ```
-perl s0_get_barcode_pairs_id.pl ../raw_data/DA/D2A_S41_L001_R1_001.fastq.gz ../raw_data/DA/D2A_S41_L001_R2_001.fastq.gz >barcode_req_id
+perl s0_get_barcode_pairs_id.pl D2A_S41_L001_R1_001.fastq.gz D2A_S41_L001_R2_001.fastq.gz > barcode_req_id
 ```
 
 ```
@@ -29,7 +29,7 @@ while(<R1>){
                 $hash_barcode1{$header} = $barcode1;
         }
 }
-# 这里面的序列长度和序列是可以自己切换修改的，根据自己的数据情况
+# 这里面的序列长度和序列是可以自己切换修改的，根据自己的数据情况,替换的部位是上面及下面的sequence位置
 my $header;my $pairs;
 while(<R2>){
         chomp;
@@ -98,6 +98,18 @@ mv GCGT_GATG_R1.fastq T10_R1.fastq
 ![image](https://github.com/Raymundo-cj/the-biology-test/assets/64938817/0345d56c-743a-4ae5-8e7d-4707d18da0f7)
 
 根据样本拆分好的数据
+
+## 基因编辑效率统计的两种方法
+
+### 方法一：基于CRISPRoss2软件进行序列分析
+
+分析前环境设置：
+
+```
+
+```
+
+
 
 ### 2.服务器数据分析
 * 本次分析在服务器pg3152，运行下面代码前先激活conda环境：`source activate /public3/home/pg3152/anaconda3/bin/envs/caocao`
