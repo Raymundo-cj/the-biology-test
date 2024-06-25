@@ -1,5 +1,3 @@
-
-----------
 ## 1.数据下载方式
 ### 1.1 派森诺数据
 ![image](https://github.com/Raymundo-cj/the-biology-test/assets/64938817/629f5396-8623-42f0-b6fb-3fd4b656017f)
