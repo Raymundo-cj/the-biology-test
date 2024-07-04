@@ -3,95 +3,88 @@
 
 **1.获取测序文件的index与测序序列的之间的关系文件**
 
-```
-perl s0_get_barcode_pairs_id.pl D2A_S41_L001_R1_001.fastq.gz D2A_S41_L001_R2_001.fastq.gz > barcode_req_id
-```
-
-```
-# s0_get_barcode_pairs_id.pl
-
-#!/usr/bin/perl -w
-use strict;
-open R1,"zcat $ARGV[0]|" or die;
-open R2,"zcat $ARGV[1]|" or die;
-
-my %hash_barcode1;my %hash;my %hash_pairs;
-
-while(<R1>){
-        chomp;
-        my @ss=split/\s/,$_;
-        my $header=$ss[0];
-        chomp(my $sequence=<R1>);
-        chomp(my $comment=<R1>);
-        chomp(my $quality=<R1>);
-        $sequence =~ /GCTT(.+?)TGGAGTGAGTACGGTGTGC/; my $barcode1= $1;
-        if (length($barcode1)==4){
-                $hash_barcode1{$header} = $barcode1;
-        }
-}
-# 这里面的序列长度和序列是可以自己切换修改的，根据自己的数据情况,替换的部位是上面及下面的sequence位置
-my $header;my $pairs;
-while(<R2>){
-        chomp;
-        my @ss=split/\s/,$_;
-        $header=$ss[0];
-        chomp(my $sequence=<R2>);
-        chomp(my $comment=<R2>);
-        chomp(my $quality=<R2>);
-        $sequence =~ /CTGT(.+?)TGAGTTGGATGCTGGATGG/; my $barcode2= $1;
-        if (length($barcode2)==4){
-                $pairs = $hash_barcode1{$header}."_$barcode2";
-                if (exists $hash_pairs{$pairs}){
-                        $hash_pairs{$pairs} = $hash_pairs{$pairs}."\t$header";
-                }else{
-                        $hash_pairs{$pairs} = $header;
-                }
-        }
-}
-foreach my $key (keys %hash_pairs){
-        print "$key\t$hash_pairs{$key}\n";
-}
-```
-**2 根据reads拆分文库**
-
-根据上面得到的文件`barcode_req_id`及`adapter_seq_list`文件，获取每个样品的测序数据ID：
-
-```
-mkdir barcode_out
-cat adapter_seq_list |while read name bar;do grep $bar barcode_req_id >barcode_out/$name;done
-
-```
-adapter_seq_list:
-
-![image](https://github.com/Raymundo-cj/the-biology-test/assets/64938817/58fdbc64-f0af-4389-bc40-3f4801f413f8)
-
-barcode_out:及里面内容
-
-![image](https://github.com/Raymundo-cj/the-biology-test/assets/64938817/7513a809-5cb2-4a9b-96d4-41da57055996)
-
-之后根据样品的序列ID拿到每个样品的序列，并且一个样品一个序列文件：
+利用下面的命令进行测序数据拆分
 
 ```
 #!/bin/bash
-mkdir all_library
-for file in barcode_out/*
-do
-    perl s1_get_r1_seq.pl $file ~/lzy/lzyngs/1-LZY_S1_L003_R1_001.fastq.gz
-    perl s1_get_r2_seq.pl $file ~/lzy/lzyngs/1-LZY_S1_L003_R2_001.fastq.gz
-done
+python NGS_hitac_split.py E200021312_L01_UN1_1.fq.gz E200021312_L01_UN1_2.fq.gz barcode_lenpy.txt
+echo "finished"
+```
+其中`barcode_lenpy.txt`里面的内容如下所示
+
+![image](https://github.com/Raymundo-cj/the-biology-test/assets/64938817/a2098c37-c663-4b27-b1ec-4bf35b256892)
+
+第一列：样品名称
+第二列：样品5`barcode
+第三列：样品3`barcode
+
+python文件展示如下：
 
 ```
+import os
+import sys
+from Bio import SeqIO
+import gzip
 
-这样就会得到一些数据文件，之后转化为自己文件命名的格式
+r1 = sys.argv[1]
+r2 = sys.argv[2]
+tn5_barcode = sys.argv[3]
 
-```
-cd all_library
-mv GCGT_GCGT_R1.fastq 259_R1.fastq
-mv GCGT_GTAG_R1.fastq A7_R1.fastq
-mv GCGT_ACGC_R1.fastq VB7_R1.fastq
-mv GCGT_GCTC_R1.fastq T10cr2-4_R1.fastq
-mv GCGT_AGTC_R1.fastq T10cr4-2_R1.fastq
-mv GCGT_GATG_R1.fastq T10_R1.fastq
+
+def input_barcode(barcode_dir, open_barcode_f, barcode_file):
+    with open(barcode_file, 'r') as barcode:
+        os.makedirs('split_data', exist_ok=True)
+        for line in barcode:
+            fields = line.split()
+            barcode_key = fields[1] + fields[2]
+            barcode_dir[barcode_key] = fields[0]
+            open_barcode_f[f'{fields[1]}{fields[2]}_1'] = open(f'split_data/{fields[0]}_1.fq', 'w')
+            open_barcode_f[f'{fields[1]}{fields[2]}_2'] = open(f'split_data/{fields[0]}_2.fq', 'w')
+
+
+def split_data(read1, read2, barcode_dir, open_barcode_f):
+    print('\n\nSpliting data started.')
+    if read1.endswith('.gz'):
+        file1_open = gzip.open
+    else:
+        file1_open = open
+    if read2.endswith('.gz'):
+        file2_open = gzip.open
+    else:
+        file2_open = open
+
+    barcode_num = 0
+    with file1_open(read1, 'rt') as file1, file2_open(read2, 'rt') as file2:
+        for r1_record, r2_record in zip(SeqIO.parse(file1, 'fastq'), SeqIO.parse(file2, 'fastq')):
+            r1name = r1_record.id
+            r1seq = str(r1_record.seq)
+            r1_line3 = "+"  # Assuming this is always '+'
+            r1quality = r1_record.format('fastq').split('\n')[3]
+
+            r2name = r2_record.id
+            r2seq = str(r2_record.seq)
+            r2_line3 = "+"
+            r2quality = r2_record.format('fastq').split('\n')[3]
+
+            barcode_num += 1
+            # 针对不同的barcode的，修改的内容在这里，数字8代表barcode的长度，数字27表示前端27nt需要被截掉，也就是设计的引物及barcode部分，不是自己想要的目标序列
+            if r1seq[:8] + r2seq[:8] in barcode_dir:
+                # 写入第一个reads信息
+                open_barcode_f[f"{r1seq[:8]}{r2seq[:8]}_1"].write(f"@{r1name}\n{r1seq[27:]}\n{r1_line3}\n{r1quality[27:]}\n")
+                # 写入第二个reads信息
+                open_barcode_f[f"{r1seq[:8]}{r2seq[:8]}_2"].write(f"@{r2name}\n{r2seq[27:]}\n{r2_line3}\n{r2quality[27:]}\n")
+
+    print(f"Total barcodes processed: {barcode_num}")
+
+
+def main():
+    barcode, open_barcode_file = {}, {}
+    input_barcode(barcode, open_barcode_file, tn5_barcode)
+    split_data(r1, r2, barcode, open_barcode_file)
+
+
+if __name__ == '__main__':
+    main()
 ```
 
 ### 1.二代测序数据
@@ -289,3 +282,93 @@ for bar in bars:
     plt.show()
 ```
 
+```
+perl s0_get_barcode_pairs_id.pl D2A_S41_L001_R1_001.fastq.gz D2A_S41_L001_R2_001.fastq.gz > barcode_req_id
+```
+
+```
+# s0_get_barcode_pairs_id.pl
+
+#!/usr/bin/perl -w
+use strict;
+open R1,"zcat $ARGV[0]|" or die;
+open R2,"zcat $ARGV[1]|" or die;
+
+my %hash_barcode1;my %hash;my %hash_pairs;
+
+while(<R1>){
+        chomp;
+        my @ss=split/\s/,$_;
+        my $header=$ss[0];
+        chomp(my $sequence=<R1>);
+        chomp(my $comment=<R1>);
+        chomp(my $quality=<R1>);
+        $sequence =~ /GCTT(.+?)TGGAGTGAGTACGGTGTGC/; my $barcode1= $1;
+        if (length($barcode1)==4){
+                $hash_barcode1{$header} = $barcode1;
+        }
+}
+# 这里面的序列长度和序列是可以自己切换修改的，根据自己的数据情况,替换的部位是上面及下面的sequence位置
+my $header;my $pairs;
+while(<R2>){
+        chomp;
+        my @ss=split/\s/,$_;
+        $header=$ss[0];
+        chomp(my $sequence=<R2>);
+        chomp(my $comment=<R2>);
+        chomp(my $quality=<R2>);
+        $sequence =~ /CTGT(.+?)TGAGTTGGATGCTGGATGG/; my $barcode2= $1;
+        if (length($barcode2)==4){
+                $pairs = $hash_barcode1{$header}."_$barcode2";
+                if (exists $hash_pairs{$pairs}){
+                        $hash_pairs{$pairs} = $hash_pairs{$pairs}."\t$header";
+                }else{
+                        $hash_pairs{$pairs} = $header;
+                }
+        }
+}
+foreach my $key (keys %hash_pairs){
+        print "$key\t$hash_pairs{$key}\n";
+}
+```
+**2 根据reads拆分文库**
+
+根据上面得到的文件`barcode_req_id`及`adapter_seq_list`文件，获取每个样品的测序数据ID：
+
+```
+mkdir barcode_out
+cat adapter_seq_list |while read name bar;do grep $bar barcode_req_id >barcode_out/$name;done
+
+```
+adapter_seq_list:
+
+![image](https://github.com/Raymundo-cj/the-biology-test/assets/64938817/58fdbc64-f0af-4389-bc40-3f4801f413f8)
+
+barcode_out:及里面内容
+
+![image](https://github.com/Raymundo-cj/the-biology-test/assets/64938817/7513a809-5cb2-4a9b-96d4-41da57055996)
+
+之后根据样品的序列ID拿到每个样品的序列，并且一个样品一个序列文件：
+
+```
+#!/bin/bash
+mkdir all_library
+for file in barcode_out/*
+do
+    perl s1_get_r1_seq.pl $file ~/lzy/lzyngs/1-LZY_S1_L003_R1_001.fastq.gz
+    perl s1_get_r2_seq.pl $file ~/lzy/lzyngs/1-LZY_S1_L003_R2_001.fastq.gz
+done
+
+```
+
+这样就会得到一些数据文件，之后转化为自己文件命名的格式
+
+```
+cd all_library
+mv GCGT_GCGT_R1.fastq 259_R1.fastq
+mv GCGT_GTAG_R1.fastq A7_R1.fastq
+mv GCGT_ACGC_R1.fastq VB7_R1.fastq
+mv GCGT_GCTC_R1.fastq T10cr2-4_R1.fastq
+mv GCGT_AGTC_R1.fastq T10cr4-2_R1.fastq
+mv GCGT_GATG_R1.fastq T10_R1.fastq
+```
